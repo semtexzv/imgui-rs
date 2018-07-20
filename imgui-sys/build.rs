@@ -109,14 +109,33 @@ impl {typ} {{
         .expect("Unable to generate bindings");
 
     let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
-
+    /*
     bindings
         .write_to_file("debug_ffi.rs")
         .expect("Couldn't write Debug bindings!");
-
+    */
     bindings
         .write_to_file(out_path.join("imgui_ffi.rs"))
         .expect("Couldn't write bindings!");
+
+
+    let internal_bindings = bindgen::builder()
+        .header("third-party/internal.hpp")
+        .disable_name_namespacing()
+        .whitelist_function(".*NewFrameUpdateHoveredWindowAndCaptureFlags.*")
+        .generate()
+        .expect("Unable to generate bindings for internal functions");
+
+/*
+    internal_bindings
+     .write_to_file("internal_debug_ffi.rs")
+     .expect("Couldn't write Debug bindings!");
+     */
+
+    internal_bindings
+        .write_to_file(out_path.join("internal_imgui_ffi.rs"))
+        .expect("Couldn't write bindings!");
+
 
     let mut build = cc::Build::new();
 

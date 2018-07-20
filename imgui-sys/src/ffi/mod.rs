@@ -24,6 +24,22 @@ impl ImVec2 {
         }
     }
 }
+use std::ops::{Add,Sub};
+impl Add<ImVec2> for ImVec2 {
+    type Output = ImVec2;
+
+    fn add(self, rhs: ImVec2) -> Self::Output {
+        (self.x + rhs.x, self.y + rhs.y).into()
+    }
+}
+
+impl Sub<ImVec2> for ImVec2 {
+    type Output = ImVec2;
+
+    fn sub(self, rhs: ImVec2) -> Self::Output {
+        (self.x - rhs.x, self.y - rhs.y).into()
+    }
+}
 
 impl From<[f32; 2]> for ImVec2 {
     fn from(array: [f32; 2]) -> ImVec2 { ImVec2::new(array[0], array[1]) }
@@ -81,6 +97,10 @@ impl ImGuiCond_ {
 }
 
 include!(concat!(env!("OUT_DIR"), "/imgui_ffi.rs"));
+
+pub mod internal {
+    include!(concat!(env!("OUT_DIR"), "/internal_imgui_ffi.rs"));
+}
 
 //pub mod debug_ffi;
 //pub use debug_ffi::*;

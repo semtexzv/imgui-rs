@@ -123,8 +123,8 @@ impl ImGui {
     pub fn style_mut(&mut self) -> &mut ImGuiStyle { unsafe { &mut *sys::GetStyle() } }
     pub fn fonts(&mut self) -> ImFontAtlas { unsafe { ImFontAtlas::from_ptr(self.io_mut().Fonts) } }
     pub fn prepare_texture<'a, F, T>(&mut self, f: F) -> T
-    where
-        F: FnOnce(TextureHandle<'a>) -> T,
+        where
+            F: FnOnce(TextureHandle<'a>) -> T,
     {
         let io = self.io();
         let mut pixels: *mut c_uchar = ptr::null_mut();
@@ -348,6 +348,19 @@ impl ImGui {
     pub fn get_time(&self) -> f32 { unsafe { sys::GetTime() } }
     pub fn get_frame_count(&self) -> i32 { unsafe { sys::GetFrameCount() } }
     pub fn get_frame_rate(&self) -> f32 { self.io().Framerate }
+
+    /// Processes input, and returns helper struct, that can retrieve whether this input is handled by ImGui or
+    /// should be handled by application
+    ///
+    /// Use this, if you need to forward input events based on whether ImGui responded to them.
+    /// Note: Calling this function is not necessary, ImGui will also process input on ImGui::frame`
+    pub fn input_state<'ui, 'a: 'ui>(
+        &'a mut self
+    ) -> UiInputState<'ui> {
+        unsafe { sys::internal::NewFrameUpdateHoveredWindowAndCaptureFlags(); }
+        UiInputState { imgui: self }
+    }
+
     pub fn frame<'ui, 'a: 'ui>(
         &'a mut self,
         size_points: (u32, u32),
@@ -390,6 +403,23 @@ impl Drop for ImGui {
 }
 
 static mut CURRENT_UI: Option<Ui<'static>> = None;
+
+
+pub struct UiInputState<'ui> {
+    imgui: &'ui ImGui,
+}
+impl<'ui> UiInputState<'ui> {
+    pub fn imgui(&self) -> &ImGui { self.imgui }
+    pub fn want_capture_mouse(&self) -> bool {
+        let io = self.imgui.io();
+        io.WantCaptureMouse
+    }
+    pub fn want_capture_keyboard(&self) -> bool {
+        let io = self.imgui.io();
+        io.WantCaptureKeyboard
+    }
+}
+
 
 pub struct DrawData<'a> {
     raw: &'a mut sys::ImDrawData,
@@ -495,8 +525,8 @@ impl<'ui> Ui<'ui> {
         io.MetricsActiveWindows
     }
     pub fn render<F, E>(self, f: F) -> Result<(), E>
-    where
-        F: FnOnce(&Ui, DrawData) -> Result<(), E>,
+        where
+            F: FnOnce(&Ui, DrawData) -> Result<(), E>,
     {
         unsafe {
             sys::Render();
@@ -517,8 +547,8 @@ impl<'ui> Ui<'ui> {
         }
     }
     #[deprecated(
-        since = "0.0.19",
-        note = "please use show_demo_window instead"
+    since = "0.0.19",
+    note = "please use show_demo_window instead"
     )]
     pub fn show_test_window(&self, opened: &mut bool) { self.show_demo_window(opened) }
     pub fn show_demo_window(&self, opened: &mut bool) {
@@ -557,8 +587,8 @@ impl<'ui> Ui<'ui> {
 
     /// Runs a function after temporarily pushing a value to the item width stack.
     pub fn with_item_width<F>(&self, width: f32, f: F)
-    where
-        F: FnOnce(),
+        where
+            F: FnOnce(),
     {
         self.push_item_width(width);
         f();
@@ -626,6 +656,18 @@ impl<'ui> Ui<'ui> {
         unsafe { sys::SetCursorPos(&pos.into() as *const _) }
     }
 
+    pub fn scroll_max_x(&self) -> f32 {
+        unsafe { sys::GetScrollMaxX() }
+    }
+
+    pub fn scroll_to_x(&self, v: f32) {
+        unsafe { sys::SetScrollX(v); }
+    }
+
+    pub fn scroll_to_y(&self, v: f32) {
+        unsafe { sys::SetScrollY(v); }
+    }
+
     /// Get available space left between the cursor and the edges of the current
     /// window.
     pub fn get_content_region_avail(&self) -> (f32, f32) {
@@ -686,9 +728,9 @@ impl<'ui> Ui<'ui> {
 
     /// Runs a function after temporarily pushing a value to the ID stack.
     pub fn with_id<'a, F, I>(&self, id: I, f: F)
-    where
-        F: FnOnce(),
-        I: Into<ImId<'a>>,
+        where
+            F: FnOnce(),
+            I: Into<ImId<'a>>,
     {
         self.push_id(id);
         f();
@@ -707,8 +749,8 @@ impl<'ui> Ui<'ui> {
         }
     }
     pub fn text_colored<'p, A>(&self, col: A, text: &'p ImStr)
-    where
-        A: Into<ImVec4>,
+        where
+            A: Into<ImVec4>,
     {
         unsafe {
             sys::TextColored(&col.into() as *const _, fmt_ptr(), text.as_ptr());
@@ -1046,8 +1088,8 @@ impl<'ui> Ui<'ui> {
 // Widgets: Menus
 impl<'ui> Ui<'ui> {
     pub fn main_menu_bar<F>(&self, f: F)
-    where
-        F: FnOnce(),
+        where
+            F: FnOnce(),
     {
         let render = unsafe { sys::BeginMainMenuBar() };
         if render {
@@ -1056,8 +1098,8 @@ impl<'ui> Ui<'ui> {
         }
     }
     pub fn menu_bar<F>(&self, f: F)
-    where
-        F: FnOnce(),
+        where
+            F: FnOnce(),
     {
         let render = unsafe { sys::BeginMenuBar() };
         if render {
@@ -1075,8 +1117,8 @@ impl<'ui> Ui<'ui> {
 impl<'ui> Ui<'ui> {
     pub fn open_popup<'p>(&self, str_id: &'p ImStr) { unsafe { sys::OpenPopup(str_id.as_ptr()) }; }
     pub fn popup<'p, F>(&self, str_id: &'p ImStr, f: F)
-    where
-        F: FnOnce(),
+        where
+            F: FnOnce(),
     {
         let render = unsafe { sys::BeginPopup(str_id.as_ptr(), sys::ImGuiWindowFlags::None) };
         if render {
